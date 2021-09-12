@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:aop="http://www.springframework.org/schema/aop" xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="
+          http://www.springframework.org/schema/beans
+          http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
+          http://www.springframework.org/schema/aop
+          http://www.springframework.org/schema/aop/spring-aop-2.0.xsd
+          http://www.springframework.org/schema/tx
+          http://www.springframework.org/schema/tx/spring-tx-2.0.xsd
+          http://www.springframework.org/schema/context
+          http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+
+
+    <!--管理数据源-->
+    <bean id="dataSource" class="org.apache.commons.dbcp2.BasicDataSource" destroy-method="close">
+        <!--数据库连接信息-->
+        <property name="driverClassName" value="com.mysql.jdbc.Driver"/>
+        <property name="url" value="jdbc:mysql://localhost:3306/test?characterEncoding=utf8"/>
+        <property name="username" value="root"/>
+        <property name="password" value="123456"/>
+        <!--连接池信息-->
+        <property name="maxTotal" value="100"/>
+        <property name="minIdle" value="5"/>
+        <property name="maxWaitMillis" value="2000"/>
+    </bean>
+
+    <!--管理工厂-->
+    <bean id="sessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="configLocation" value="classpath:mybatis-config.xml"/>
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+
+    <!--配置事务-->
+    <bean id="manager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+
+    <!--事务管理策略-->
+    <tx:advice id="txAdvice" transaction-manager="manager">
+        <tx:attributes>
+            <tx:method name="save*" isolation="READ_COMMITTED" propagation="REQUIRED"></tx:method>
+            <tx:method name="delete*" isolation="READ_COMMITTED" propagation="REQUIRED"></tx:method>
+            <tx:method name="update*" isolation="READ_COMMITTED" propagation="REQUIRED"></tx:method>
+            <tx:method name="*" read-only="true"/>
+        </tx:attributes>
+    </tx:advice>
+
+    <!--事务管理切入点-->
+    <aop:config>
+        <aop:advisor advice-ref="txAdvice" pointcut="execution(* com.zen.dao.*.*(..))"></aop:advisor>
+    </aop:config>
+
+    <!--Spring容器管理包中的类-->
+    <context:component-scan base-package="com.zen.controller,com.zen.service,com.zen.dao"/>
+
+
+</beans>
